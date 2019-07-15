@@ -97,9 +97,9 @@ if __name__ == '__main__':
 
 	# Capture livestream
 	# cap = cv2.VideoCapture (BASE_URL + 'playlist.m3u8')
-	cap = VideoCapture("http://192.168.43.1:8080/video")
+	# cap = VideoCapture("http://192.168.43.1:8080/video")
 	# cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
-	# cap = VideoCapture(0)
+	cap = VideoCapture(0)
 
 	print("[INFO] loading model...")
 	# net = cv2.dnn.readNet('frozen_model.pb')
@@ -150,13 +150,15 @@ if __name__ == '__main__':
 		# dilation = cv2.dilate(erosion, kernel_dilate, iterations=1)
 		# opening = cv2.morphologyEx(dilation, cv2.MORPH_OPEN, kernel, iterations=1)
 		# closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel_dilate, iterations=2)
-
+		start = time.time()
 		new = cv2.cvtColor (orig_frame, cv2.COLOR_BGR2RGB)
-		img = resize(new, input_dim,
-                     mode='reflect', anti_aliasing=True)
-
-		lr = rescale(img, 1 / 4, mode='reflect',
-                     multichannel=True, anti_aliasing=True)
+		end = time.time()
+		print("[INFO] convert took " + str((end-start)*1000) + " ms")
+		start = time.time()
+		img = cv2.resize(new, (input_dim[1], input_dim[0]), cv2.INTER_AREA)
+		lr = cv2.resize(img, (input_dim[1]//4, input_dim[0]//4), cv2.INTER_AREA)
+		end = time.time()
+		print("[INFO] resize took " + str((end-start)*1000) + " ms")
 
 		# set the blob as input to the network and perform a forward-pass to
 		# obtain our output classification
@@ -167,7 +169,7 @@ if __name__ == '__main__':
 		# net.setInput(inp1, 	"input1")
 		# net.setInput(inp2, 	"input2")
 
-		start = time.time()
+		
 		# img = resize(imread('0000008.jpg'), input_dim,
 		#                            mode='reflect', anti_aliasing=True)
 
@@ -176,8 +178,8 @@ if __name__ == '__main__':
 
 		# heat_map = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])
 
-
-		heat_map = model.predict([img[np.newaxis,...], lr[np.newaxis,...]], batch_size=1)[0]
+		start = time.time()
+		heat_map = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])[0]
 		end = time.time()
 		print("[INFO] segmentation took " + str((end-start)*1000) + " ms")
 		
@@ -190,9 +192,11 @@ if __name__ == '__main__':
 
 		# orig_frame = copy.copy(frame)
 		# print(frame.shape)
+		start = time.time()
 		(thresh, im_bw) = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
-
+		end = time.time()
+		print("[INFO] final resize took " + str((end-start)*1000) + " ms")
 		plt.ion()
 		plt.show()
 		plt.imshow(im_bw)
