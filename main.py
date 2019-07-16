@@ -19,6 +19,7 @@ from skimage.io import imread
 import keras
 import keras.backend as K
 import matplotlib.pylab as plt
+from math import atan
 
 
 # y = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])
@@ -97,30 +98,36 @@ if __name__ == '__main__':
 
 	# Capture livestream
 	# cap = cv2.VideoCapture (BASE_URL + 'playlist.m3u8')
-	# cap = VideoCapture("http://192.168.43.1:8080/video")
+	cap = VideoCapture("http://192.168.43.1:8080/video")
 	# cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
-	cap = VideoCapture(0)
+	# cap = VideoCapture(0)
 
 	print("[INFO] loading model...")
 	# net = cv2.dnn.readNet('frozen_model.pb')
 	# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_INFERENCE_ENGINE)
 	# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+
 	model = keras.models.load_model('weights.39-0.56.hdf5')
+
+	# # serialize model to JSON
+	# model_json = model.to_json()
+	# with open("context.json", "w") as json_file:
+	#     json_file.write(model_json)
+	# # serialize weights to HDF5
+	# model.save_weights("context.h5")
+	# with open('context.json', 'r') as json_file:
+	# 	loaded_model_json = json_file.read()
+	# model = keras.models.model_from_json(loaded_model_json)
+	# # load weights into new model
+	# model.load_weights("context.h5")
+	print("Loaded model from disk")
 
 
 	while True:
 		centers = []
 		frame_start_time = datetime.utcnow()
 		frame = cap.read()
-		# img = frame
-		# print(frame.shape)
-		# cv2.imshow ('original', frame)
-		# time.sleep(1.0 / FPS)
-		# print('d')
-		# continue
-
-		# rows,cols,ch = img.shape
-		# print(rows, cols, ch)
+		
 
 		# pts1 = np.float32([[285, 330],[206, 460],[550, 330],[620, 460]])
 		# pts2 = np.float32([[0,0],[0, 300],[400, 0],[300, 400]])
@@ -150,34 +157,17 @@ if __name__ == '__main__':
 		# dilation = cv2.dilate(erosion, kernel_dilate, iterations=1)
 		# opening = cv2.morphologyEx(dilation, cv2.MORPH_OPEN, kernel, iterations=1)
 		# closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel_dilate, iterations=2)
-		start = time.time()
+		# start = time.time()
 		new = cv2.cvtColor (orig_frame, cv2.COLOR_BGR2RGB)
-		end = time.time()
-		print("[INFO] convert took " + str((end-start)*1000) + " ms")
-		start = time.time()
+		# end = time.time()
+		# print("[INFO] convert took " + str((end-start)*1000) + " ms")
+		# start = time.time()
 		img = cv2.resize(new, (input_dim[1], input_dim[0]), cv2.INTER_AREA)
 		lr = cv2.resize(img, (input_dim[1]//4, input_dim[0]//4), cv2.INTER_AREA)
-		end = time.time()
-		print("[INFO] resize took " + str((end-start)*1000) + " ms")
-
-		# set the blob as input to the network and perform a forward-pass to
-		# obtain our output classification
-		# inp1 = cv2.dnn.blobFromImage((img*255).astype(np.uint8), 1/255)
-		# inp2 = cv2.dnn.blobFromImage((lr*255).astype(np.uint8), 1/255)
-
-		# print(net.getLayerNames())
-		# net.setInput(inp1, 	"input1")
-		# net.setInput(inp2, 	"input2")
+		# end = time.time()
+		# print("[INFO] resize took " + str((end-start)*1000) + " ms")
 
 		
-		# img = resize(imread('0000008.jpg'), input_dim,
-		#                            mode='reflect', anti_aliasing=True)
-
-		# lr = rescale(img, 1 / 4, mode='reflect',
-		#                                         multichannel=True, anti_aliasing=True)
-
-		# heat_map = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])
-
 		start = time.time()
 		heat_map = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])[0]
 		end = time.time()
@@ -192,24 +182,21 @@ if __name__ == '__main__':
 
 		# orig_frame = copy.copy(frame)
 		# print(frame.shape)
-		start = time.time()
+		# start = time.time()
 		(thresh, im_bw) = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
-		end = time.time()
-		print("[INFO] final resize took " + str((end-start)*1000) + " ms")
+		# end = time.time()
+		# print("[INFO] final resize took " + str((end-start)*1000) + " ms")
 		plt.ion()
 		plt.show()
 		plt.imshow(im_bw)
 
-		# cArray1 = cv2.CreateMat(48, 64, cv2.CV_8U)
-		# cArray1[:] = shoe_mask
+
 		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 		# print(len(contours))
 		# cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
 		# cv2.drawContours(frame, contours, -1, (0,255,0), 3)
 		# print(frame.shape)
-
-
 
 		# _, contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -246,46 +233,46 @@ if __name__ == '__main__':
 
 						cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 255), 2)
 
-					try:
+					# try:
 						'''
 							TODO: account for load lag
 						'''
 
-						trace_i = len(vehicle.trace) - 1
+					d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
+					d_y = vehicle.trace[-1][1][0] - vehicle.trace[-2][1][0]
 
-						trace_x = vehicle.trace[trace_i][0][0]
-						trace_y = vehicle.trace[trace_i][1][0]
+					angle = atan(-d_y/d_x)
+					velocity = np.sqrt(d_x**2 + d_y**2)
+					# Check if tracked object has reached the speed detection line
+					# if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
+						# cv2.putText(frame, 'I PASSED!', (int(trace_x), int(trace_y)), font, 1, (0, 255, 255), 1, cv2.LINE_AA)
+						# vehicle.passed = True
 
-						# Check if tracked object has reached the speed detection line
-						if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
-							# cv2.putText(frame, 'I PASSED!', (int(trace_x), int(trace_y)), font, 1, (0, 255, 255), 1, cv2.LINE_AA)
-							vehicle.passed = True
+					load_lag = (datetime.utcnow() - frame_start_time).total_seconds()
 
-							load_lag = (datetime.utcnow() - frame_start_time).total_seconds()
+					time_dur = (datetime.utcnow() - vehicle.start_time).total_seconds() - load_lag
+					time_dur /= 60
+					time_dur /= 60
 
-							time_dur = (datetime.utcnow() - vehicle.start_time).total_seconds() - load_lag
-							time_dur /= 60
-							time_dur /= 60
-
-							
-							vehicle.mph = ROAD_DIST_MILES / time_dur
+					
+					vehicle.mph = ROAD_DIST_MILES / time_dur
 
 							# If calculated speed exceeds speed limit, save an image of speeding car
-							if vehicle.mph > HIGHWAY_SPEED_LIMIT:
-								print ('UH OH, SPEEDING!')
+							# if vehicle.mph > HIGHWAY_SPEED_LIMIT:
+								# print ('UH OH, SPEEDING!')
 								# cv2.circle(orig_frame, (int(trace_x), int(trace_y)), 20, (0, 0, 255), 2)
 								# cv2.putText(orig_frame, 'MPH: %s' % int(vehicle.mph), (int(trace_x), int(trace_y)), font, 1, (0, 0, 255), 1, cv2.LINE_AA)
 								# cv2.imwrite('speeding_%s.png' % vehicle.track_id, orig_frame)
 								# print ('FILE SAVED!')
 
-						if vehicle.passed:
+						# if vehicle.passed:
 							# Display speed if available
-							cv2.putText(frame, 'ID: '+ str(vehicle.track_id), (int(trace_x), int(trace_y)), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
-						else:
+							# cv2.putText(frame, 'ID: '+ str(vehicle.track_id), (int(trace_x), int(trace_y)), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
+						# else:
 							# Otherwise, just show tracking id
-							cv2.putText(frame, 'ID: '+ str(vehicle.track_id), (int(trace_x), int(trace_y)), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
-					except:
-						pass
+							# cv2.putText(frame, 'ID: '+ str(vehicle.track_id), (int(trace_x), int(trace_y)), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
+					# except:
+					# 	pass
 
 
 		# Display all images
