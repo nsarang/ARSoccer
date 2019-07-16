@@ -5,7 +5,7 @@ import copy
 import os
 import glob
 from datetime import datetime
-import imutils
+# import imutils
 
 # os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
@@ -14,8 +14,8 @@ from tracker import Tracker
 
 import queue, threading
 import matplotlib.pylab as plt
-from skimage.transform import rescale, resize
-from skimage.io import imread
+# from skimage.transform import rescale, resize
+# from skimage.io import imread
 import keras
 import keras.backend as K
 import matplotlib.pylab as plt
@@ -98,7 +98,8 @@ if __name__ == '__main__':
 
 	# Capture livestream
 	# cap = cv2.VideoCapture (BASE_URL + 'playlist.m3u8')
-	cap = VideoCapture("http://192.168.43.1:8080/video")
+	cap = VideoCapture("http://172.20.11.71:8080/video")
+	# cap = VideoCapture("http://192.168.43.1:8080/video")
 	# cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
 	# cap = VideoCapture(0)
 
@@ -126,7 +127,10 @@ if __name__ == '__main__':
 	while True:
 		centers = []
 		frame_start_time = datetime.utcnow()
+		start = time.time()
 		frame = cap.read()
+		end = time.time()
+		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 		
 
 		# pts1 = np.float32([[285, 330],[206, 460],[550, 330],[620, 460]])
@@ -158,7 +162,7 @@ if __name__ == '__main__':
 		# opening = cv2.morphologyEx(dilation, cv2.MORPH_OPEN, kernel, iterations=1)
 		# closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel_dilate, iterations=2)
 		# start = time.time()
-		new = cv2.cvtColor (orig_frame, cv2.COLOR_BGR2RGB)
+		new = cv2.cvtColor (orig_frame, cv2.COLOR_BGR2RGB) / 255.
 		# end = time.time()
 		# print("[INFO] convert took " + str((end-start)*1000) + " ms")
 		# start = time.time()
@@ -187,12 +191,12 @@ if __name__ == '__main__':
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
 		# end = time.time()
 		# print("[INFO] final resize took " + str((end-start)*1000) + " ms")
-		plt.ion()
-		plt.show()
-		plt.imshow(im_bw)
+	#	plt.ion()
+	#	plt.show()
+	#	plt.imshow(im_bw)
 
 
-		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+		contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 		# print(len(contours))
 		# cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
 		# cv2.drawContours(frame, contours, -1, (0,255,0), 3)
@@ -297,5 +301,5 @@ if __name__ == '__main__':
 	cv2.destroyAllWindows()
 
 	# remove all speeding_*.png images created in runtime
-	for file in glob.glob('speeding_*.png'):
-		os.remove(file)
+	# for file in glob.glob('speeding_*.png'):
+	#	os.remove(file)
