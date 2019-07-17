@@ -115,6 +115,11 @@ if __name__ == '__main__':
 	# Create object tracker
 	tracker = Tracker(200, 3, 3, 1)
 
+	h, w = 480, 800 
+	# calculate the center of the image
+	center = (w / 2, h / 2)
+	angle180 = 180
+	scale = 1.0
 	M = cv2.getRotationMatrix2D(center, angle180, scale)
 
 	# Capture livestream
