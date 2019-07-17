@@ -121,6 +121,9 @@ if __name__ == '__main__':
 	# angle180 = 180
 	# scale = 1.0
 	# M = cv2.getRotationMatrix2D(center, angle180, scale)
+	hflip = 1
+	vflip = 0
+	
 	if hflip and vflip:
 		c = -1
 	else:
