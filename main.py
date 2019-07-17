@@ -115,12 +115,16 @@ if __name__ == '__main__':
 	# Create object tracker
 	tracker = Tracker(200, 3, 3, 1)
 
-	h, w = 480, 800 
-	# calculate the center of the image
-	center = (w / 2, h / 2)
-	angle180 = 180
-	scale = 1.0
-	M = cv2.getRotationMatrix2D(center, angle180, scale)
+	# h, w = 480, 800 
+	# # calculate the center of the image
+	# center = (w / 2, h / 2)
+	# angle180 = 180
+	# scale = 1.0
+	# M = cv2.getRotationMatrix2D(center, angle180, scale)
+	if hflip and vflip:
+		c = -1
+    else:
+    	c = 0 if vflip else 1
 
 	# Capture livestream
 	# cap = VideoCapture("http://172.20.11.71:8080/video")
@@ -158,7 +162,8 @@ if __name__ == '__main__':
 	while len(cornerPoints) < 4:
 		start = time.time()
 		frame = cap.read()
-		frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+		# frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+		frame = cv2.flip(frame, flipCode=c)
 		end = time.time()
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 
@@ -187,7 +192,7 @@ if __name__ == '__main__':
 		frame_start_time = datetime.utcnow()
 		start = time.time()
 		frame = cap.read()
-		frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+		frame = cv2.flip(frame, flipCode=c)
 		end = time.time()
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 
