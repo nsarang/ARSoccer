@@ -171,8 +171,8 @@ class Tracker(object):
                                             np.array([[0], [0]]), 0)
 
             if len(self.tracks[i].trace) > self.max_trace_length:
-                for j in range(len(self.tracks[i].trace) -
-                               self.max_trace_length, reverse=True):
+                for j in reversed(range(len(self.tracks[i].trace) -
+                               self.max_trace_length)):
                     del self.tracks[i].trace[j]
 
             self.tracks[i].trace.append(self.tracks[i].prediction)

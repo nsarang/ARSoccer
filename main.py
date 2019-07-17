@@ -15,7 +15,7 @@ import queue, threading
 import keras
 import keras.backend as K
 import matplotlib.pylab as plt
-from math import atan
+from math import atan, pi
 from connection import DataReciever, DataSender
 
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
 	field_width = 434
 	field_height = 199
-	radius = 4
+	radius = 11
 
 	blob_min_width_far = 1
 	blob_min_height_far = 1
@@ -120,6 +120,9 @@ if __name__ == '__main__':
 	cap = VideoCapture("http://192.168.43.1:8080/video")
 	# cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
 	# cap = VideoCapture(0)
+
+	ds = DataSender('127.0.0.1', 1835)
+	dr = DataReciever('127.0.0.1', 1836)
 
 	print("[INFO] loading model...")
 	
@@ -150,8 +153,7 @@ if __name__ == '__main__':
 		frame = cap.read()
 		end = time.time()
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
-		# display the image and wait for a keypress
-		print(cornerPoints)
+
 		for (x, y) in cornerPoints:
 			cv2.circle(frame, (x,y), 9, (255, 0, 0), -1)
 
@@ -169,9 +171,6 @@ if __name__ == '__main__':
 	h_mat, mask = cv2.findHomography(pts1, pts_field, cv2.RANSAC)
 	# dst = cv2.warpPerspective(frame,h,(field_width, field_height))
 	# frame = dst
-
-	ds = DataSender('127.0.0.1', 1835)
-	dr = DataReciever('127.0.0.1', 1836)
 
 	while True:
 		centers = []
@@ -202,16 +201,10 @@ if __name__ == '__main__':
 		# dilation = cv2.dilate(erosion, kernel_dilate, iterations=1)
 		# opening = cv2.morphologyEx(dilation, cv2.MORPH_OPEN, kernel, iterations=1)
 		# closing = cv2.morphologyEx(opening, cv2.MORPH_CLOSE, kernel_dilate, iterations=2)
-		# start = time.time()
+
 		new = cv2.cvtColor (orig_frame, cv2.COLOR_BGR2RGB) / 255.
-		# end = time.time()
-		# print("[INFO] convert took " + str((end-start)*1000) + " ms")
-		# start = time.time()
 		img = cv2.resize(new, (input_dim[1], input_dim[0]), cv2.INTER_AREA)
 		lr = cv2.resize(img, (input_dim[1]//4, input_dim[0]//4), cv2.INTER_AREA)
-		# end = time.time()
-		# print("[INFO] resize took " + str((end-start)*1000) + " ms")
-
 		
 		start = time.time()
 		heat_map = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])[0]
@@ -225,23 +218,12 @@ if __name__ == '__main__':
 
 
 
-		# orig_frame = copy.copy(frame)
-		# print(frame.shape)
-		# start = time.time()
 		(thresh, im_bw) = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
-		# end = time.time()
-		# print("[INFO] final resize took " + str((end-start)*1000) + " ms")
-	#	plt.ion()
-	#	plt.show()
-	#	plt.imshow(im_bw)
 
 
-		contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-		# print(len(contours))
-		# cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
-		# cv2.drawContours(frame, contours, -1, (0,255,0), 3)
-		# print(frame.shape)
+		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
 
 		# _, contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
@@ -249,11 +231,13 @@ if __name__ == '__main__':
 		for cnt in contours:
 			x, y, w, h = cv2.boundingRect(cnt)
 			center = np.array ([[x+w/2], [y+h/2]])
-			
-			if not ptInRectangle(center, pts_field):
+
+			if not ptInRectangle(center, cornerPoints):
 				continue
 
-			ret = cv2.warpPerspective(np.float32([[x, y], [x+w, y], [x, y+h], [x+w, y+h]]), h_mat, (field_width, field_height))
+			ret = cv2.perspectiveTransform(np.float32([[x, y], [x+w, y], [x, y+h], [x+w, y+h]]).reshape(-1, 1, 2), h_mat)
+			ret = ret.reshape(4, 2)
+			print(ret.shape)
 			print(ret)
 			# if (w >= blob_min_width_far and h >= blob_min_height_far):
 				# w <= blob_min_width_near and h <= blob_min_height_near):
@@ -286,13 +270,28 @@ if __name__ == '__main__':
 						cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 255), 2)
 
 				ball_x, ball_y = dr.get_cords()
-				if intersection_ball_object(vehicle.cords, (ball_x, ball_y), radius):
-					d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
-					d_y = vehicle.trace[-1][1][0] - vehicle.trace[-2][1][0]
+				print('ball', ball_x, ball_y)
+				if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
+					if len(vehicle.trace) == 1:
+						# angle = atan(-d_y/d_x) * 180.0 / pi
+						# velocity = np.sqrt(d_x**2 + d_y**2) * 200
+						# velocity = min(999, velocity)
+						# angle = min(359, angle)
+						print("velo-angle&&&", angle, velocity)
+						ds.send(50, 100)
 
-					angle = atan(-d_y/d_x)
-					velocity = np.sqrt(d_x**2 + d_y**2)
-					ds.send(velocity * 100, angle)
+					elif len(vehicle.trace) > 1:
+						d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
+						d_y = vehicle.trace[-1][1][0] - vehicle.trace[-2][1][0]
+
+						angle = atan(-d_y/d_x) * 180.0 / pi
+						if angle < 0:
+							angle += 360
+						velocity = np.sqrt(d_x**2 + d_y**2) * 100
+						velocity = min(500, velocity)
+						angle = min(359, angle)
+						print("velo-angle", angle, velocity)
+						ds.send(velocity, angle)
 					# Check if tracked object has reached the speed detection line
 					# if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
 						# cv2.putText(frame, 'I PASSED!', (int(trace_x), int(trace_y)), font, 1, (0, 255, 255), 1, cv2.LINE_AA)
@@ -326,12 +325,13 @@ if __name__ == '__main__':
 
 
 		# Display all images
-		cv2.imshow ('original', frame)
+		
 		# box = cv2.selectROI("original", frame, fromCenter=False,
 		# 	showCrosshair=True)
 		# print(box)
 		# print(type(shoe_mask))
-		# cv2.imshow('mask', shoe_mask)
+		cv2.imshow('mask', im_bw)
+		cv2.imshow ('original', frame)
 		# cv2.imshow ('opening/closing', closing)
 		# cv2.imshow ('background subtraction', fgmask)
 

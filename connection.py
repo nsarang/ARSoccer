@@ -27,11 +27,11 @@ class DataReciever:
                     msg = msg.decode('ascii')
                     with self.lock:
                     	self.x, self.y = (int(msg[:3]), int(msg[5:]))
-                    print(self.x, self.y)
+                    # print(self.x, self.y)
 
     def get_cords(self):
         with self.lock:
-            return (self.x, self.y)
+            return self.x, self.y
 
 
 class DataSender:
@@ -42,8 +42,9 @@ class DataSender:
         self.socket.connect((self.HOST, self.PORT))
 
     def send(self, velocity, angle):
-        msg = '{0:03d}${0:03d}'.format(velocity, angle)
-        self.socket.send(bytes(msg, 'utf-8'))
+    	msg = '{0:03d}${1:03d}'.format(int(velocity), int(angle))
+    	print(msg)
+    	self.socket.send(bytes(msg, 'utf-8'))
 	
     def close(self):
     	self.socket.close()
