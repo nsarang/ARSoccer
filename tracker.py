@@ -19,7 +19,7 @@ class Track(object):
         None
     """
 
-    def __init__(self, prediction, trackIdCount):
+    def __init__(self, prediction, cords, trackIdCount):
         """Initialize variables used by Track class
         Args:
             prediction: predicted centroids of object to be tracked
@@ -34,6 +34,7 @@ class Track(object):
         self.trace = []  # trace path
         self.start_time = datetime.utcnow()
         self.passed = False
+        self.cords = cords
 
 
 class Tracker(object):
@@ -61,7 +62,7 @@ class Tracker(object):
         self.tracks = []
         self.trackIdCount = trackIdCount
 
-    def update(self, detections):
+    def update(self, detections, cords):
         """Update tracks vector using following steps:
             - Create tracks if no tracks vector found
             - Calculate cost using sum of square distance
@@ -83,7 +84,7 @@ class Tracker(object):
         # Create tracks if no tracks vector found
         if len(self.tracks) == 0:
             for i in range(len(detections)):
-                track = Track(detections[i], self.trackIdCount)
+                track = Track(detections[i], cords[i], self.trackIdCount)
                 self.trackIdCount += 1
                 self.tracks.append(track)
 
@@ -131,13 +132,15 @@ class Tracker(object):
         # for i in range(len(self.tracks)):
         #     if self.tracks[i].skipped_frames > self.max_frames_to_skip:
         #         del_tracks.append(i)
-        if len(del_tracks) > 0:  # only when skipped frame exceeds max
-            for id in del_tracks:
-                if id < len(self.tracks):
-                    del self.tracks[id]
-                    del assignment[id]
-                else:
-                    print("ERROR: id is greater than length of tracks")
+        self.tracks = [v for i,v in enumerate(self.tracks) if i not in del_tracks]
+        assignment = [v for i,v in enumerate(assignment) if i not in del_tracks]
+        # if len(del_tracks) > 0:  # only when skipped frame exceeds max
+        #     for id in del_tracks:
+        #         if id < len(self.tracks):
+        #             del self.tracks[id]
+        #             del assignment[id]
+        #         else:
+        #             print("ERROR: id is greater than length of tracks")
 
         # Now look for un_assigned detects
         un_assigned_detects = [i for i in range(len(detections)) if i not in assignment]
@@ -149,6 +152,7 @@ class Tracker(object):
         if len(un_assigned_detects) != 0:
             for i in range(len(un_assigned_detects)):
                 track = Track(detections[un_assigned_detects[i]],
+                              cords[un_assigned_detects[i]],
                               self.trackIdCount)
                 self.trackIdCount += 1
                 self.tracks.append(track)
@@ -161,13 +165,14 @@ class Tracker(object):
                 self.tracks[i].skipped_frames = 0
                 self.tracks[i].prediction = self.tracks[i].KF.correct(
                                             detections[assignment[i]], 1)
+                self.tracks[i].cords = cords[assignment[i]]
             else:
                 self.tracks[i].prediction = self.tracks[i].KF.correct(
                                             np.array([[0], [0]]), 0)
 
             if len(self.tracks[i].trace) > self.max_trace_length:
                 for j in range(len(self.tracks[i].trace) -
-                               self.max_trace_length):
+                               self.max_trace_length, reverse=True):
                     del self.tracks[i].trace[j]
 
             self.tracks[i].trace.append(self.tracks[i].prediction)

@@ -5,7 +5,6 @@ import copy
 import os
 import glob
 from datetime import datetime
-# import imutils
 
 # os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
@@ -13,19 +12,13 @@ from kalman_filter import KalmanFilter
 from tracker import Tracker
 
 import queue, threading
-import matplotlib.pylab as plt
-# from skimage.transform import rescale, resize
-# from skimage.io import imread
 import keras
 import keras.backend as K
 import matplotlib.pylab as plt
 from math import atan
+from connection import DataReciever, DataSender
 
 
-# y = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])
-
-# plt.imshow(y[0,...,-1])
-# plt.show()
 
 
 # bufferless VideoCapture
@@ -55,15 +48,44 @@ class VideoCapture:
     return self.q.get()
 
 
-if __name__ == '__main__':
-	# The one I first used for testing; after staring at it so much, I've grown attached to this road :3
-	# the_og_base_url = 'http://wzmedia.dot.ca.gov:1935/D3/89_rampart.stream/'
 
-	# BASE_URL = 'http://wzmedia.dot.ca.gov:1935/D3/80_whitmore_grade.stream/'
-	# FPS = 30
-	'''
-		Distance to line in road: ~0.025 miles
-	'''
+def brush_circle(event, x, y, flags, param):
+    global cornerPoints
+
+    if len(cornerPoints) >= 4:
+    	return
+    if event == cv2.EVENT_LBUTTONDOWN:
+   		cornerPoints.append([x, y])
+
+
+
+def ptInRectangle(pt, rect):
+	return (pt[0] >= rect[0][0] and pt[1] >= rect[0][1]) and (
+		pt[0] <= rect[1][0] and pt[1] >= rect[1][1]) and (
+		pt[0] >= rect[2][0] and pt[1] <= rect[2][1]) and (
+		pt[0] <= rect[3][0] and pt[1] <= rect[3][1])
+
+
+
+def ptInCircle(pt, circle_cent, radius):
+	return np.linalg.norm(pt - circle_cent) <= radius
+
+
+def intersection_ball_object(rect_cords, circle_cent, radius):
+	return ptInRectangle(circle_cent, rect_cords) or (
+		ptInCircle(rect_cords[0], circle_cent, radius)) or (
+		ptInCircle(rect_cords[1], circle_cent, radius)) or (
+		ptInCircle(rect_cords[2], circle_cent, radius)) or (
+		ptInCircle(rect_cords[3], circle_cent, radius))
+
+
+
+if __name__ == '__main__':
+	global frame, cornerPoints
+	cornerPoints = []
+
+	FPS = 60
+
 	ROAD_DIST_MILES = 0.025
 
 	'''
@@ -71,25 +93,22 @@ if __name__ == '__main__':
 	'''
 	HIGHWAY_SPEED_LIMIT = 65
 
-	# Initial background subtractor and text font
-	# fgbg = cv2.createBackgroundSubtractorMOG2()
+
 	font = cv2.FONT_HERSHEY_PLAIN
 
 	centers = [] 
 
-	# y-cooridinate for speed detection line
 
 	input_dim = (384, 512, 3)
 	K.set_learning_phase(0) # 0 testing, 1 training mode
 
-
-	Y_THRESH = 240
+	field_width = 434
+	field_height = 199
+	radius = 4
 
 	blob_min_width_far = 1
 	blob_min_height_far = 1
 
-	# blob_min_width_near = 80
-	# blob_min_height_near = 40
 
 	frame_start_time = None
 
@@ -97,49 +116,71 @@ if __name__ == '__main__':
 	tracker = Tracker(200, 3, 3, 1)
 
 	# Capture livestream
-	# cap = cv2.VideoCapture (BASE_URL + 'playlist.m3u8')
-	cap = VideoCapture("http://172.20.11.71:8080/video")
+	# cap = VideoCapture("http://172.20.11.71:8080/video")
 	# cap = VideoCapture("http://192.168.43.1:8080/video")
 	# cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
-	# cap = VideoCapture(0)
+	cap = VideoCapture(0)
 
 	print("[INFO] loading model...")
-	# net = cv2.dnn.readNet('frozen_model.pb')
-	# net.setPreferableBackend(cv2.dnn.DNN_BACKEND_INFERENCE_ENGINE)
-	# net.setPreferableTarget(cv2.dnn.DNN_TARGET_CPU)
+	
 
-	model = keras.models.load_model('weights.39-0.56.hdf5')
-
+	# model = keras.models.load_model('weights.39-0.56.hdf5')
+	
 	# # serialize model to JSON
 	# model_json = model.to_json()
 	# with open("context.json", "w") as json_file:
 	#     json_file.write(model_json)
 	# # serialize weights to HDF5
 	# model.save_weights("context.h5")
-	# with open('context.json', 'r') as json_file:
-	# 	loaded_model_json = json_file.read()
-	# model = keras.models.model_from_json(loaded_model_json)
-	# # load weights into new model
-	# model.load_weights("context.h5")
+	with open('context.json', 'r') as json_file:
+		loaded_model_json = json_file.read()
+	model = keras.models.model_from_json(loaded_model_json)
+	# load weights into new model
+	model.load_weights("context.h5")
 	print("Loaded model from disk")
 
 
+
+	cv2.namedWindow("Select")
+	cv2.setMouseCallback("Select", brush_circle)
+ 
+	# keep looping until the 'q' key is pressed
+	while len(cornerPoints) < 4:
+		start = time.time()
+		frame = cap.read()
+		end = time.time()
+		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
+		# display the image and wait for a keypress
+		print(cornerPoints)
+		for (x, y) in cornerPoints:
+			cv2.circle(frame, (x,y), 9, (255, 0, 0), -1)
+
+		cv2.imshow("Select", frame)
+		if cv2.waitKey(5) == 27:
+			break 
+ 
+	# close all open windows
+	cv2.destroyAllWindows()
+
+
+	pts1 = np.float32(cornerPoints)
+	pts_field = np.float32([[0,0],[field_width, 0],[0, field_height],[field_width, field_height]])
+	M = cv2.getPerspectiveTransform(pts1,pts_field)
+	h_mat, mask = cv2.findHomography(pts1, pts_field, cv2.RANSAC)
+	# dst = cv2.warpPerspective(frame,h,(field_width, field_height))
+	# frame = dst
+
+	ds = DataSender('127.0.0.1', 1835)
+	dr = DataReciever('127.0.0.1', 1836)
+
 	while True:
 		centers = []
+		cords = []
 		frame_start_time = datetime.utcnow()
 		start = time.time()
 		frame = cap.read()
 		end = time.time()
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
-		
-
-		# pts1 = np.float32([[285, 330],[206, 460],[550, 330],[620, 460]])
-		# pts2 = np.float32([[0,0],[0, 300],[400, 0],[300, 400]])
-		# M = cv2.getPerspectiveTransform(pts1,pts2)
-		# h, mask = cv2.findHomography(pts1, pts2, cv2.RANSAC)
-		# dst = cv2.warpPerspective(img,h,(400, 300))
-
-		# frame = dst
 
 		orig_frame = copy.copy(frame)
 
@@ -196,7 +237,7 @@ if __name__ == '__main__':
 	#	plt.imshow(im_bw)
 
 
-		contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 		# print(len(contours))
 		# cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
 		# cv2.drawContours(frame, contours, -1, (0,255,0), 3)
@@ -207,11 +248,18 @@ if __name__ == '__main__':
 		# Find centers of all detected objects
 		for cnt in contours:
 			x, y, w, h = cv2.boundingRect(cnt)
+			center = np.array ([[x+w/2], [y+h/2]])
 			
+			if not ptInRectangle(center, pts_field):
+				continue
+
+			ret = cv2.warpPerspective(np.float32([[x, y], [x+w, y], [x, y+h], [x+w, y+h]]), h_mat, (field_width, field_height))
+			print(ret)
 			# if (w >= blob_min_width_far and h >= blob_min_height_far):
 				# w <= blob_min_width_near and h <= blob_min_height_near):
-			center = np.array ([[x+w/2], [y+h/2]])
+			center = np.array ([[(ret[0][0] + ret[1][0])/2], [(ret[0][1] + ret[2][1])/2]])
 			centers.append(np.round(center))
+			cords.append(ret)
 			# print(center)
 			cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 3)
 			# print((x, y), (x+w, y+h))
@@ -224,7 +272,7 @@ if __name__ == '__main__':
 			# 	cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
 		if centers:
-			tracker.update(centers)
+			tracker.update(centers, cords)
 
 			for vehicle in tracker.tracks:
 				if len(vehicle.trace) > 1:
@@ -237,29 +285,27 @@ if __name__ == '__main__':
 
 						cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 255), 2)
 
-					# try:
-						'''
-							TODO: account for load lag
-						'''
-
+				ball_x, ball_y = dr.get_cords()
+				if intersection_ball_object(vehicle.cords, (ball_x, ball_y), radius):
 					d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
 					d_y = vehicle.trace[-1][1][0] - vehicle.trace[-2][1][0]
 
 					angle = atan(-d_y/d_x)
 					velocity = np.sqrt(d_x**2 + d_y**2)
+					ds.send(velocity * 100, angle)
 					# Check if tracked object has reached the speed detection line
 					# if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
 						# cv2.putText(frame, 'I PASSED!', (int(trace_x), int(trace_y)), font, 1, (0, 255, 255), 1, cv2.LINE_AA)
 						# vehicle.passed = True
 
-					load_lag = (datetime.utcnow() - frame_start_time).total_seconds()
+					# load_lag = (datetime.utcnow() - frame_start_time).total_seconds()
 
-					time_dur = (datetime.utcnow() - vehicle.start_time).total_seconds() - load_lag
-					time_dur /= 60
-					time_dur /= 60
+					# time_dur = (datetime.utcnow() - vehicle.start_time).total_seconds() - load_lag
+					# time_dur /= 60
+					# time_dur /= 60
 
 					
-					vehicle.mph = ROAD_DIST_MILES / time_dur
+					# vehicle.mph = ROAD_DIST_MILES / time_dur
 
 							# If calculated speed exceeds speed limit, save an image of speeding car
 							# if vehicle.mph > HIGHWAY_SPEED_LIMIT:
