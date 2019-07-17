@@ -169,6 +169,7 @@ if __name__ == '__main__':
 	pts_field = np.float32([[0,0],[field_width, 0],[0, field_height],[field_width, field_height]])
 	M = cv2.getPerspectiveTransform(pts1,pts_field)
 	h_mat, mask = cv2.findHomography(pts1, pts_field, cv2.RANSAC)
+	inv = np.linalg.inverse(h_mat)
 	# dst = cv2.warpPerspective(frame,h,(field_width, field_height))
 	# frame = dst
 
@@ -262,12 +263,16 @@ if __name__ == '__main__':
 				if len(vehicle.trace) > 1:
 					for j in range(len(vehicle.trace)-1):
                         # Draw trace line
+
 						x1 = vehicle.trace[j][0][0]
 						y1 = vehicle.trace[j][1][0]
 						x2 = vehicle.trace[j+1][0][0]
 						y2 = vehicle.trace[j+1][1][0]
-
-						cv2.line(frame, (int(x1), int(y1)), (int(x2), int(y2)), (0, 255, 255), 2)
+						ret = cv2.perspectiveTransform(np.float32([[x1, y1], [x2, y2]]).reshape(-1, 1, 2), inv)
+						ret = ret.reshape(2, 2)
+						#print(ret.shape)
+						#print(ret)
+						cv2.line(frame, (int(ret[0][0]), int(ret[0][1])), (int(ret[1][0]), int(ret[1][1])), (0, 255, 255), 2)
 
 				ball_x, ball_y = dr.get_cords()
 				print('ball', ball_x, ball_y)
