@@ -123,8 +123,8 @@ if __name__ == '__main__':
 	# M = cv2.getRotationMatrix2D(center, angle180, scale)
 	if hflip and vflip:
 		c = -1
-    else:
-    	c = 0 if vflip else 1
+	else:
+		c = 0 if vflip else 1
 
 	# Capture livestream
 	# cap = VideoCapture("http://172.20.11.71:8080/video")
