@@ -222,7 +222,7 @@ if __name__ == '__main__':
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
 
 
-		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+		contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
 
 		# _, contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -275,7 +275,7 @@ if __name__ == '__main__':
 					if len(vehicle.trace) == 1:
 						# angle = atan(-d_y/d_x) * 180.0 / pi
 						# velocity = np.sqrt(d_x**2 + d_y**2) * 200
-						# velocity = min(999, velocity)
+						# velocity = min(300, velocity)
 						# angle = min(359, angle)
 						print("velo-angle&&&", angle, velocity)
 						ds.send(50, 100)
@@ -287,8 +287,8 @@ if __name__ == '__main__':
 						angle = atan(-d_y/d_x) * 180.0 / pi
 						if angle < 0:
 							angle += 360
-						velocity = np.sqrt(d_x**2 + d_y**2) * 100
-						velocity = min(500, velocity)
+						velocity = np.sqrt(d_x**2 + d_y**2) * 50
+						velocity = min(300, max(20, velocity))
 						angle = min(359, angle)
 						print("velo-angle", angle, velocity)
 						ds.send(velocity, angle)
