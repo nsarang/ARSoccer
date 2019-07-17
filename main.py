@@ -123,7 +123,7 @@ if __name__ == '__main__':
 	# M = cv2.getRotationMatrix2D(center, angle180, scale)
 	hflip = 1
 	vflip = 0
-	
+
 	if hflip and vflip:
 		c = -1
 	else:
@@ -307,8 +307,8 @@ if __name__ == '__main__':
 						# velocity = np.sqrt(d_x**2 + d_y**2) * 200
 						# velocity = min(300, velocity)
 						# angle = min(359, angle)
-						print("velo-angle&&&", angle, velocity)
-						ds.send(10, 100)
+						# print("velo-angle&&&", angle, velocity)
+						ds.send(20, np.random.randint(0, 360))
 
 					elif len(vehicle.trace) > 1:
 						d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
