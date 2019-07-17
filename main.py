@@ -291,7 +291,7 @@ if __name__ == '__main__':
 						# velocity = min(300, velocity)
 						# angle = min(359, angle)
 						print("velo-angle&&&", angle, velocity)
-						ds.send(50, 100)
+						ds.send(10, 100)
 
 					elif len(vehicle.trace) > 1:
 						d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
@@ -300,8 +300,8 @@ if __name__ == '__main__':
 						angle = atan(-d_y/d_x) * 180.0 / pi
 						if angle < 0:
 							angle += 360
-						velocity = np.sqrt(d_x**2 + d_y**2) * 50
-						velocity = min(300, max(20, velocity))
+						velocity = np.sqrt(d_x**2 + d_y**2) * 20
+						velocity = min(200, max(20, velocity))
 						angle = min(359, angle)
 						print("velo-angle", angle, velocity)
 						ds.send(velocity, angle)
