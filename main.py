@@ -117,9 +117,9 @@ if __name__ == '__main__':
 
 	# Capture livestream
 	# cap = VideoCapture("http://172.20.11.71:8080/video")
-	# cap = VideoCapture("http://192.168.43.1:8080/video")
+	cap = VideoCapture("http://192.168.43.1:8080/video")
 	# cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
-	cap = VideoCapture(0)
+	# cap = VideoCapture(0)
 
 	print("[INFO] loading model...")
 	
