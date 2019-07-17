@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
 	field_width = 434
 	field_height = 199
-	radius = 11
+	radius = 16
 
 	blob_min_width_far = 1
 	blob_min_height_far = 1
