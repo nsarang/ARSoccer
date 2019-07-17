@@ -169,7 +169,7 @@ if __name__ == '__main__':
 	pts_field = np.float32([[0,0],[field_width, 0],[0, field_height],[field_width, field_height]])
 	M = cv2.getPerspectiveTransform(pts1,pts_field)
 	h_mat, mask = cv2.findHomography(pts1, pts_field, cv2.RANSAC)
-	inv = np.linalg.inverse(h_mat)
+	inv = np.linalg.inv(h_mat)
 	# dst = cv2.warpPerspective(frame,h,(field_width, field_height))
 	# frame = dst
 
