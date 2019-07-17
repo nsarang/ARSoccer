@@ -246,7 +246,7 @@ if __name__ == '__main__':
 			centers.append(np.round(center))
 			cords.append(ret)
 			# print(center)
-			cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 3)
+			# cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 3)
 			# print((x, y), (x+w, y+h))
 			# cv2.line(frame,(0, 30),(640, 30),(255,0,0),2)
 
@@ -260,6 +260,14 @@ if __name__ == '__main__':
 			tracker.update(centers, cords)
 
 			for vehicle in tracker.tracks:
+				cords = vehicle.cords
+				ret = cv2.perspectiveTransform(cords.reshape(4, 1, 2), inv)
+				ret = ret.reshape(4, 2)
+						#print(ret.shape)
+						#print(ret)
+				# cv2.line(frame, (int(ret[0][0]), int(ret[0][1])), (int(ret[1][0]), int(ret[1][1])), (0, 255, 255), 2)
+				cv2.rectangle(frame, ret[0], ret[-1], (255, 0, 255), 3)
+
 				if len(vehicle.trace) > 1:
 					for j in range(len(vehicle.trace)-1):
                         # Draw trace line
