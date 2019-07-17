@@ -237,7 +237,7 @@ if __name__ == '__main__':
 	#	plt.imshow(im_bw)
 
 
-		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+		contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 		# print(len(contours))
 		# cnts = sorted(cnts, key = cv2.contourArea, reverse = True)[:10]
 		# cv2.drawContours(frame, contours, -1, (0,255,0), 3)
