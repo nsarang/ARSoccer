@@ -266,7 +266,7 @@ if __name__ == '__main__':
 						#print(ret.shape)
 						#print(ret)
 				# cv2.line(frame, (int(ret[0][0]), int(ret[0][1])), (int(ret[1][0]), int(ret[1][1])), (0, 255, 255), 2)
-				cv2.rectangle(frame, ret[0], ret[-1], (255, 0, 255), 3)
+				cv2.rectangle(frame, (ret[0][0], ret[0][1]), (ret[-1][0], ret[-1][1]), (255, 0, 255), 3)
 
 				if len(vehicle.trace) > 1:
 					for j in range(len(vehicle.trace)-1):
