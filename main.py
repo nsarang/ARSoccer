@@ -232,7 +232,7 @@ if __name__ == '__main__':
 		print("[INFO] segmentation took " + str((end-start)*1000) + " ms")
 		
 		shoe_mask = np.zeros(shape=(48, 64), dtype=np.uint8)
-		idx_sort = np.argsort(heat_map)[...,-4:]
+		idx_sort = np.argsort(heat_map)[...,-3:]
 		shoe_mask[np.any(idx_sort == 19, axis=-1)] = 255
 		shoe_mask[np.any(idx_sort == 18, axis=-1)] = 255
 		shoe_mask[np.any(idx_sort == 8, axis=-1)] = 255
@@ -252,7 +252,7 @@ if __name__ == '__main__':
 			x, y, w, h = cv2.boundingRect(cnt)
 			center = np.array ([[x+w/2], [y+h/2]])
 			print(h, w)
-			
+
 			if not ptInRectangle(center, cornerPoints):
 				continue
 
