@@ -19,14 +19,14 @@ class DataReciever:
         while True:
             (conn, addr) = self.socket.accept()
             with conn:
-                print ('Connected by', addr)
+                print('Connected by', addr)
                 while True:
                     msg = conn.recv(7)
                     if not msg:
                         break
                     msg = msg.decode('ascii')
                     with self.lock:
-                    	self.x, self.y = (int(msg[:3]), int(msg[5:]))
+                    	self.x, self.y = int(msg[:3]), int(msg[5:])
                     # print(self.x, self.y)
 
     def get_cords(self):
@@ -39,11 +39,17 @@ class DataSender:
         self.HOST = HOST
         self.PORT = PORT
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.HOST, self.PORT))
+        self.connected = False
+        
 
     def send(self, velocity, angle):
+    	if not self.connected:
+    		try:
+    			self.socket.connect((self.HOST, self.PORT))
+    			self.connected = True
+    		except:
+    			return
     	msg = '{0:03d}${1:03d}'.format(int(velocity), int(angle))
-    	print(msg)
     	self.socket.send(bytes(msg, 'utf-8'))
 	
     def close(self):

@@ -6,12 +6,13 @@ import os
 import glob
 from datetime import datetime
 
+
 # os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
 from kalman_filter import KalmanFilter
 from tracker import Tracker
 
-import queue, threading
+import queue, threading, subprocess
 import keras
 import keras.backend as K
 import matplotlib.pylab as plt
@@ -30,7 +31,6 @@ class VideoCapture:
     t.daemon = True
     t.start()
 
-
   # read frames as soon as they are available, keeping only most recent one
   def _reader(self):
     while True:
@@ -40,7 +40,7 @@ class VideoCapture:
       if not self.q.empty():
         try:
           self.q.get_nowait()   # discard previous (unprocessed) frame
-        except Queue.Empty:
+        except queue.Empty:
           pass
       self.q.put(frame)
 
@@ -84,15 +84,15 @@ if __name__ == '__main__':
 	global frame, cornerPoints
 	cornerPoints = []
 
-	FPS = 60
+	subprocess.Popen([os.getcwd()+"/Ar_Soccer_Demo1/V.app/Contents/MacOS/V"])
 
+	FPS = 60
 	ROAD_DIST_MILES = 0.025
 
 	'''
 		Speed limit of urban freeways in California (50-65 MPH)
 	'''
 	HIGHWAY_SPEED_LIMIT = 65
-
 
 	font = cv2.FONT_HERSHEY_PLAIN
 
@@ -102,9 +102,9 @@ if __name__ == '__main__':
 	input_dim = (384, 512, 3)
 	K.set_learning_phase(0) # 0 testing, 1 training mode
 
-	field_width = 434
-	field_height = 199
-	radius = 16
+	field_width = 151
+	field_height = 90
+	radius = 8
 
 	blob_min_width_far = 1
 	blob_min_height_far = 1
@@ -121,6 +121,8 @@ if __name__ == '__main__':
 	# angle180 = 180
 	# scale = 1.0
 	# M = cv2.getRotationMatrix2D(center, angle180, scale)
+	
+
 	hflip = 1
 	vflip = 0
 
@@ -166,7 +168,7 @@ if __name__ == '__main__':
 		start = time.time()
 		frame = cap.read()
 		# frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
-		frame = cv2.flip(frame, flipCode=c)
+		# frame = cv2.flip(frame, flipCode=c)
 		end = time.time()
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 
@@ -195,7 +197,7 @@ if __name__ == '__main__':
 		frame_start_time = datetime.utcnow()
 		start = time.time()
 		frame = cap.read()
-		frame = cv2.flip(frame, flipCode=c)
+		# frame = cv2.flip(frame, flipCode=c)
 		end = time.time()
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 
@@ -230,17 +232,17 @@ if __name__ == '__main__':
 		print("[INFO] segmentation took " + str((end-start)*1000) + " ms")
 		
 		shoe_mask = np.zeros(shape=(48, 64), dtype=np.uint8)
-		in_max = np.argmax(heat_map, axis=-1)
-		shoe_mask[in_max == 19] = 255
-		shoe_mask[in_max == 18] = 255
-
+		idx_sort = np.argsort(heat_map)[...,-4:]
+		shoe_mask[np.any(idx_sort == 19, axis=-1)] = 255
+		shoe_mask[np.any(idx_sort == 18, axis=-1)] = 255
+		shoe_mask[np.any(idx_sort == 8, axis=-1)] = 255
 
 
 		(thresh, im_bw) = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
 
 
-		contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
 
 		# _, contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -249,14 +251,15 @@ if __name__ == '__main__':
 		for cnt in contours:
 			x, y, w, h = cv2.boundingRect(cnt)
 			center = np.array ([[x+w/2], [y+h/2]])
-
+			print(h, w)
+			
 			if not ptInRectangle(center, cornerPoints):
 				continue
 
 			ret = cv2.perspectiveTransform(np.float32([[x, y], [x+w, y], [x, y+h], [x+w, y+h]]).reshape(-1, 1, 2), h_mat)
 			ret = ret.reshape(4, 2)
-			print(ret.shape)
-			print(ret)
+			# print(ret.shape)
+			# print(ret)
 			# if (w >= blob_min_width_far and h >= blob_min_height_far):
 				# w <= blob_min_width_near and h <= blob_min_height_near):
 			center = np.array ([[(ret[0][0] + ret[1][0])/2], [(ret[0][1] + ret[2][1])/2]])
@@ -300,7 +303,7 @@ if __name__ == '__main__':
 						cv2.line(frame, (int(ret[0][0]), int(ret[0][1])), (int(ret[1][0]), int(ret[1][1])), (0, 255, 255), 2)
 
 				ball_x, ball_y = dr.get_cords()
-				print('ball', ball_x, ball_y)
+				# print('ball', ball_x, ball_y)
 				if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
 					if len(vehicle.trace) == 1:
 						# angle = atan(-d_y/d_x) * 180.0 / pi
@@ -360,7 +363,16 @@ if __name__ == '__main__':
 		# 	showCrosshair=True)
 		# print(box)
 		# print(type(shoe_mask))
-		cv2.imshow('mask', im_bw)
+		ball_x, ball_y = dr.get_cords()
+
+		ball_mask = np.zeros(shape=(field_height, field_width), dtype=np.uint8)
+		cv2.line(ball_mask,(field_width//2, 0),(field_width//2, field_height),(0,255,0),2)
+		cv2.circle(ball_mask, (ball_x,ball_y), 4, (255, 0, 0), -1)
+		pitch = cv2.resize(ball_mask,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
+
+
+		cv2.imshow('mask', pitch)
+		cv2.imshow ('ball', im_bw)
 		cv2.imshow ('original', frame)
 		# cv2.imshow ('opening/closing', closing)
 		# cv2.imshow ('background subtraction', fgmask)
@@ -378,4 +390,4 @@ if __name__ == '__main__':
 
 	# remove all speeding_*.png images created in runtime
 	# for file in glob.glob('speeding_*.png'):
-	#	os.remove(file)
+	# os.remove(file)
