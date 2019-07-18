@@ -83,8 +83,10 @@ def intersection_ball_object(rect_cords, circle_cent, radius):
 if __name__ == '__main__':
 	global frame, cornerPoints
 	cornerPoints = []
-
-	subprocess.Popen([os.getcwd()+"/Ar_Soccer_Demo1/V.app/Contents/MacOS/V"])
+	if os.name == 'posix':
+		subprocess.Popen([os.getcwd()+"/Ar_Soccer_Demo1/V.app/Contents/MacOS/V"])
+	else:
+		subprocess.Popen([os.getcwd()+"/AR_win/AR_win.exe"])
 
 	FPS = 60
 	ROAD_DIST_MILES = 0.025
