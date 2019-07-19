@@ -265,7 +265,7 @@ if __name__ == '__main__':
 						cv2.line(frame, (int(ret[0][0]), int(ret[0][1])), (int(ret[1][0]), int(ret[1][1])), (0, 255, 255), 2)
 
 				ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
-				print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
+				# print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
 				# print('ball', ball_x, ball_y)
 				if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
 					if len(vehicle.trace) == 1:
@@ -274,7 +274,7 @@ if __name__ == '__main__':
 						# velocity = min(300, velocity)
 						# angle = min(359, angle)
 						# print("velo-angle&&&", angle, velocity)
-						rint("0-velo-angle\t")
+						print("0-velo-angle\t")
 						ds.send(20, np.random.randint(0, 360))
 
 					elif len(vehicle.trace) > 1:
