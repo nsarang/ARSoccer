@@ -97,8 +97,8 @@ if __name__ == '__main__':
 	radius = 6
 
 
-	blob_min_width = 5
-	blob_min_height = 5
+	blob_min_width = 4
+	blob_min_height = 4
 
 
 	frame_start_time = None
@@ -146,7 +146,7 @@ if __name__ == '__main__':
 		frame = cap.read()
 		# frame = cv2.flip(frame, flipCode=c)
 		end = time.time()
-		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
+		# print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 
 		for (x, y) in cornerPoints:
 			cv2.circle(frame, (x,y), 9, (255, 0, 0), -1)
@@ -173,7 +173,7 @@ if __name__ == '__main__':
 		frame = cap.read()
 		# frame = cv2.flip(frame, flipCode=c)
 		end = time.time()
-		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
+		# print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 
 		orig_frame = copy.copy(frame)
 
@@ -200,7 +200,7 @@ if __name__ == '__main__':
 		start = time.time()
 		heat_map = model.predict([img[np.newaxis,...], lr[np.newaxis,...]])[0]
 		end = time.time()
-		print("[INFO] segmentation took " + str((end-start)*1000) + " ms")
+		# print("[INFO] segmentation took " + str((end-start)*1000) + " ms")
 		
 		shoe_mask = np.zeros(shape=(48, 64), dtype=np.uint8)
 		idx_sort = np.argsort(heat_map)[...,-2:]
@@ -209,6 +209,9 @@ if __name__ == '__main__':
 
 		thresh, im_bw = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
+
+		kernel = np.ones((4,4),np.uint8)
+		im_bw = cv2.erode(im_bw, kernel, iterations=2)
 
 		if os.name == 'posix':
 			_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -221,14 +224,14 @@ if __name__ == '__main__':
 		for cnt in contours:
 			x, y, w, h = cv2.boundingRect(cnt)
 			center = np.array ([[x+w/2], [y+h/2]])
-			print('blob', h, w)
+			# print('blob', h, w)
 
 			if not ptInRectangle(center, cornerPoints):
 				continue
 			ret = cv2.perspectiveTransform(np.float32([[x, y], [x+w, y], [x, y+h], [x+w, y+h]]).reshape(-1, 1, 2), h_mat)
 			ret = ret.reshape(4, 2)
-			# if w < blob_min_width or h < blob_min_height:
-			# 	continue
+			if w < blob_min_width or h < blob_min_height:
+				continue
 
 			center = np.array ([[(ret[0][0] + ret[1][0])/2], [(ret[0][1] + ret[2][1])/2]])
 			centers.append(np.round(center))
@@ -262,7 +265,7 @@ if __name__ == '__main__':
 						cv2.line(frame, (int(ret[0][0]), int(ret[0][1])), (int(ret[1][0]), int(ret[1][1])), (0, 255, 255), 2)
 
 				ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
-				print(ball_x, ball_y, ball_v, ball_dx, ball_dy)
+				print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
 				# print('ball', ball_x, ball_y)
 				if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
 					if len(vehicle.trace) == 1:
@@ -271,6 +274,7 @@ if __name__ == '__main__':
 						# velocity = min(300, velocity)
 						# angle = min(359, angle)
 						# print("velo-angle&&&", angle, velocity)
+						rint("0-velo-angle\t")
 						ds.send(20, np.random.randint(0, 360))
 
 					elif len(vehicle.trace) > 1:
@@ -283,7 +287,7 @@ if __name__ == '__main__':
 						velocity = np.sqrt(d_x**2 + d_y**2) * 20
 						velocity = min(200, max(20, velocity))
 						angle = min(359, angle)
-						print("velo-angle", angle, velocity)
+						print("2-velo-angle\t", velocity, angle)
 						ds.send(velocity, angle)
 					# Check if tracked object has reached the speed detection line
 					# if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
@@ -331,8 +335,8 @@ if __name__ == '__main__':
 		pitch = cv2.resize(ball_mask,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
 
 
-		cv2.imshow('mask', pitch)
-		cv2.imshow ('ball', im_bw)
+		cv2.imshow('ball', pitch)
+		cv2.imshow ('mask', im_bw)
 		cv2.imshow ('original', frame)
 		# cv2.imshow ('opening/closing', closing)
 		# cv2.imshow ('background subtraction', fgmask)
