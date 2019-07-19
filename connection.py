@@ -1,6 +1,11 @@
 import socket
 import threading
 import time
+from collections import namedtuple
+
+
+Stat = namedtuple("Stat", 'x y v', defaults=(None,) * 3)
+
 
 
 class DataReciever:
@@ -11,8 +16,8 @@ class DataReciever:
         self.socket.bind((HOST, PORT))
         self.socket.listen(10)
         self.lock = threading.Lock()
-        self.x = None
-        self.y = None
+        self.cur_stat = Stat()
+        self.prev_stat = Stat()
         threading.Thread(target=self._recieve, args=()).start()
 
     def _recieve(self):
@@ -21,17 +26,21 @@ class DataReciever:
             with conn:
                 print('Connected by', addr)
                 while True:
-                    msg = conn.recv(7)
+                    msg = conn.recv(9)
                     if not msg:
                         break
                     msg = msg.decode('ascii')
+                    self.prev_stat = self.cur_stat
                     with self.lock:
-                    	self.x, self.y = int(msg[:3]), int(msg[5:])
-                    # print(self.x, self.y)
+                    	self.cur_stat = Stat(x=int(msg[:3]),
+                                             y=int(msg[3:6]),
+                                             v=int(msg[6:]))
 
-    def get_cords(self):
+    def get_stats(self):
+        dx = self.cur_stat.x - self.prev_stat.x
+        dy = self.cur_stat.y - self.prev_stat.y
         with self.lock:
-            return self.x, self.y
+            return (*self.cur_stat, dx, dy)
 
 
 class DataSender:

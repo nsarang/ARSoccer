@@ -11,7 +11,6 @@ from datetime import datetime
 
 from kalman_filter import KalmanFilter
 from tracker import Tracker
-
 import queue, threading, subprocess
 import keras
 import keras.backend as K
@@ -22,7 +21,6 @@ from connection import DataReciever, DataSender
 
 
 
-# bufferless VideoCapture
 class VideoCapture:
   def __init__(self, name):
     self.cap = cv2.VideoCapture(name)
@@ -31,7 +29,6 @@ class VideoCapture:
     t.daemon = True
     t.start()
 
-  # read frames as soon as they are available, keeping only most recent one
   def _reader(self):
     while True:
       ret, frame = self.cap.read()
@@ -48,7 +45,6 @@ class VideoCapture:
     return self.q.get()
 
 
-
 def brush_circle(event, x, y, flags, param):
     global cornerPoints
 
@@ -58,13 +54,11 @@ def brush_circle(event, x, y, flags, param):
    		cornerPoints.append([x, y])
 
 
-
 def ptInRectangle(pt, rect):
 	return (pt[0] >= rect[0][0] and pt[1] >= rect[0][1]) and (
 		pt[0] <= rect[1][0] and pt[1] >= rect[1][1]) and (
 		pt[0] >= rect[2][0] and pt[1] <= rect[2][1]) and (
 		pt[0] <= rect[3][0] and pt[1] <= rect[3][1])
-
 
 
 def ptInCircle(pt, circle_cent, radius):
@@ -80,36 +74,31 @@ def intersection_ball_object(rect_cords, circle_cent, radius):
 
 
 
+
 if __name__ == '__main__':
 	global frame, cornerPoints
-	cornerPoints = []
+	
 	if os.name == 'posix':
 		subprocess.Popen([os.getcwd()+"/Ar_Soccer_Demo1/V.app/Contents/MacOS/V"])
 	else:
 		subprocess.Popen([os.getcwd()+"/AR_win/AR_win.exe"])
 
-	FPS = 60
-	ROAD_DIST_MILES = 0.025
-
-	'''
-		Speed limit of urban freeways in California (50-65 MPH)
-	'''
-	HIGHWAY_SPEED_LIMIT = 65
 
 	font = cv2.FONT_HERSHEY_PLAIN
-
-	centers = [] 
-
-
+	centers = []
+	cornerPoints = []
+	FPS = 60
+	
 	input_dim = (384, 512, 3)
 	K.set_learning_phase(0) # 0 testing, 1 training mode
 
 	field_width = 151
-	field_height = 90
-	radius = 8
+	field_height = 91
+	radius = 6
 
-	blob_min_width_far = 1
-	blob_min_height_far = 1
+
+	blob_min_width = 5
+	blob_min_height = 5
 
 
 	frame_start_time = None
@@ -124,35 +113,21 @@ if __name__ == '__main__':
 	# scale = 1.0
 	# M = cv2.getRotationMatrix2D(center, angle180, scale)
 	
-
 	hflip = 1
 	vflip = 0
-
 	if hflip and vflip:
 		c = -1
 	else:
 		c = 0 if vflip else 1
 
 	# Capture livestream
-	# cap = VideoCapture("http://172.20.11.71:8080/video")
 	cap = VideoCapture("http://192.168.43.1:8080/video")
-	# cap.set(cv2.CAP_PROP_BUFFERSIZE, 0)
 	# cap = VideoCapture(0)
 
 	ds = DataSender('127.0.0.1', 1835)
 	dr = DataReciever('127.0.0.1', 1836)
 
 	print("[INFO] loading model...")
-	
-
-	# model = keras.models.load_model('weights.39-0.56.hdf5')
-	
-	# # serialize model to JSON
-	# model_json = model.to_json()
-	# with open("context.json", "w") as json_file:
-	#     json_file.write(model_json)
-	# # serialize weights to HDF5
-	# model.save_weights("context.h5")
 	with open('context.json', 'r') as json_file:
 		loaded_model_json = json_file.read()
 	model = keras.models.model_from_json(loaded_model_json)
@@ -169,7 +144,6 @@ if __name__ == '__main__':
 	while len(cornerPoints) < 4:
 		start = time.time()
 		frame = cap.read()
-		# frame = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
 		# frame = cv2.flip(frame, flipCode=c)
 		end = time.time()
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
@@ -191,12 +165,10 @@ if __name__ == '__main__':
 	h_mat, mask = cv2.findHomography(pts1, pts_field, cv2.RANSAC)
 	inv = np.linalg.inv(h_mat)
 	# dst = cv2.warpPerspective(frame,h,(field_width, field_height))
-	# frame = dst
 
 	while True:
 		centers = []
 		cords = []
-		frame_start_time = datetime.utcnow()
 		start = time.time()
 		frame = cap.read()
 		# frame = cv2.flip(frame, flipCode=c)
@@ -204,9 +176,6 @@ if __name__ == '__main__':
 		print("[INFO] taking pic took " + str((end-start)*1000) + " ms")
 
 		orig_frame = copy.copy(frame)
-
-		#  Draw line used for speed detection
-		# cv2.line(frame,(0, Y_THRESH),(640, Y_THRESH),(255,0,0),2)
 
 
 		# Convert frame to grayscale and perform background subtraction
@@ -234,49 +203,37 @@ if __name__ == '__main__':
 		print("[INFO] segmentation took " + str((end-start)*1000) + " ms")
 		
 		shoe_mask = np.zeros(shape=(48, 64), dtype=np.uint8)
-		idx_sort = np.argsort(heat_map)[...,-3:]
+		idx_sort = np.argsort(heat_map)[...,-2:]
 		shoe_mask[np.any(idx_sort == 19, axis=-1)] = 255
 		shoe_mask[np.any(idx_sort == 18, axis=-1)] = 255
-		shoe_mask[np.any(idx_sort == 8, axis=-1)] = 255
 
-
-		(thresh, im_bw) = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
+		thresh, im_bw = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
 		im_bw = cv2.resize(im_bw,(frame.shape[1],frame.shape[0]), cv2.INTER_NEAREST)
 
+		if os.name == 'posix':
+			_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+		else:
+			contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
-		_, contours, hierarchy = cv2.findContours(im_bw, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
-
-		# _, contours, hierarchy = cv2.findContours(dilation, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
 		# Find centers of all detected objects
 		for cnt in contours:
 			x, y, w, h = cv2.boundingRect(cnt)
 			center = np.array ([[x+w/2], [y+h/2]])
-			print(h, w)
+			print('blob', h, w)
 
 			if not ptInRectangle(center, cornerPoints):
 				continue
-
 			ret = cv2.perspectiveTransform(np.float32([[x, y], [x+w, y], [x, y+h], [x+w, y+h]]).reshape(-1, 1, 2), h_mat)
 			ret = ret.reshape(4, 2)
-			# print(ret.shape)
-			# print(ret)
-			# if (w >= blob_min_width_far and h >= blob_min_height_far):
-				# w <= blob_min_width_near and h <= blob_min_height_near):
+			# if w < blob_min_width or h < blob_min_height:
+			# 	continue
+
 			center = np.array ([[(ret[0][0] + ret[1][0])/2], [(ret[0][1] + ret[2][1])/2]])
 			centers.append(np.round(center))
 			cords.append(ret)
-			# print(center)
-			# cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 255), 3)
-			# print((x, y), (x+w, y+h))
-			# cv2.line(frame,(0, 30),(640, 30),(255,0,0),2)
 
-			# if w >= blob_min_width_far and h >= blob_min_height_far:
-			# 	center = np.array ([[x+w/2], [y+h/2]])
-			# 	centers.append(np.round(center))
-
-			# 	cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
 		if centers:
 			tracker.update(centers, cords)
@@ -304,7 +261,8 @@ if __name__ == '__main__':
 						#print(ret)
 						cv2.line(frame, (int(ret[0][0]), int(ret[0][1])), (int(ret[1][0]), int(ret[1][1])), (0, 255, 255), 2)
 
-				ball_x, ball_y = dr.get_cords()
+				ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
+				print(ball_x, ball_y, ball_v, ball_dx, ball_dy)
 				# print('ball', ball_x, ball_y)
 				if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
 					if len(vehicle.trace) == 1:
@@ -365,7 +323,7 @@ if __name__ == '__main__':
 		# 	showCrosshair=True)
 		# print(box)
 		# print(type(shoe_mask))
-		ball_x, ball_y = dr.get_cords()
+		ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
 
 		ball_mask = np.zeros(shape=(field_height, field_width), dtype=np.uint8)
 		cv2.line(ball_mask,(field_width//2, 0),(field_width//2, field_height),(0,255,0),2)
