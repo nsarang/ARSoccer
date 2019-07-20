@@ -41,6 +41,9 @@ class VideoCapture:
 
     def read(self):
         return self.q.get()
+    
+    def release(self):
+        self.cap.release()
 
 
 def brush_circle(event, x, y, flags, param):
@@ -127,7 +130,7 @@ if __name__ == "__main__":
     blob_min_width = 4
     blob_min_height = 4
 
-    boundary_thresh = 8
+    boundary_thresh = 15
 
     frame_start_time = None
 
@@ -211,8 +214,8 @@ if __name__ == "__main__":
         thresh, im_bw = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
         im_bw = cv2.resize(im_bw, (frame.shape[1], frame.shape[0]), cv2.INTER_NEAREST)
 
-        kernel = np.ones((4, 4), np.uint8)
-        im_bw = cv2.erode(im_bw, kernel, iterations=2)
+        kernel = np.ones((3, 3), np.uint8)
+        im_bw = cv2.erode(im_bw, kernel, iterations=3)
 
         if os.name == "posix":
             _, contours, hierarchy = cv2.findContours(
