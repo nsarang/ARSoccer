@@ -4,7 +4,7 @@ import time
 from collections import namedtuple
 
 
-Stat = namedtuple("Stat", "x y v", defaults=(None,) * 3)
+Stat = namedtuple("Stat", "x y v", defaults=(0,) * 3)
 
 
 class DataReciever:
