@@ -282,7 +282,7 @@ if __name__ == "__main__":
                         )
 
                 ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
-                # print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
+                print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
                 # print('ball', ball_x, ball_y)
                 if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
                     if len(vehicle.trace) == 1:
@@ -296,7 +296,7 @@ if __name__ == "__main__":
                         d_y = vehicle.trace[-1][1][0] - vehicle.trace[-2][1][0]
                     
                     else:
-                        print("sh   2")
+                        print("sh   2\t %d" % len(vehicle.trace))
                         d_x = vehicle.trace[-1][0][0] - vehicle.trace[-3][0][0]
                         d_y = vehicle.trace[-1][1][0] - vehicle.trace[-3][1][0]
 
