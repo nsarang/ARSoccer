@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
     field_width = 151
     field_height = 91
-    radius = 5
+    radius = 6
 
     blob_min_width = 4
     blob_min_height = 4
@@ -308,7 +308,7 @@ if __name__ == "__main__":
                     # ):
                     #     ball_v = 0
                     #     ball_dx = ball_dy = np.random.random()
-                    if fr_counter - fr_shot <= 2 and foot.track_id == fr_id:
+                    if fr_counter - fr_shot <= 3 and foot.track_id == fr_id:
                         continue
                     fr_shot = fr_counter
                     fr_id = foot.track_id
