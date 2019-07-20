@@ -132,12 +132,12 @@ if __name__ == "__main__":
 
     field_width = 151
     field_height = 91
-    radius = 6
+    radius = 5.5
 
     blob_min_width = 4
     blob_min_height = 4
 
-    boundary_thresh = 50
+    boundary_thresh = 75
 
     frame_start_time = None
 
