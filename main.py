@@ -84,6 +84,10 @@ def is_valid_contour(x, y, w, h, thresh):
         [p[3][0] + thresh, p[3][1] + thresh],
     ]
 
+    print('orig', cornerPoints)
+    print('scale', upscaledPts)
+    print(ptInRectangle(center, cornerPoints), ptInRectangle(center, upscaledPts))
+
     return (
         ptInRectangle(center, upscaledPts)
         and w >= blob_min_width
@@ -229,10 +233,10 @@ if __name__ == "__main__":
             center = np.array([[x + w / 2], [y + h / 2]])
             # print('blob', h, w)
 
-            # if not is_valid_contour(x, y, w, h, thresh):
+            if not is_valid_contour(x, y, w, h, thresh):
+                continue
+            # if not ptInRectangle(center, cornerPoints):
             #     continue
-            if not ptInRectangle(center, cornerPoints):
-				continue
 
             pts = np.float32([[x, y], [x + w, y], [x, y + h], [x + w, y + h]]).reshape(
                 -1, 1, 2
@@ -315,15 +319,15 @@ if __name__ == "__main__":
 
                     if d_x == 0 and d_y == 0:
                         d_x = d_y = np.random.random()
-                    velocity = np.sqrt(d_x ** 2 + d_y ** 2) * 15
+                    velocity = np.sqrt(d_x ** 2 + d_y ** 2) * 10
                     res_unit, res_len = sum_vectors(
-                        (d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v
+                        (d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v / 2
                     )
 
                     angle = atan2(*res_unit) * 180.0 / pi
                     if angle < 0:
                         angle += 360
-                    new_velocity = min(150, max(20, res_len))
+                    new_velocity = min(100, max(20, res_len))
                     print("2-velo-angle\t", velocity, angle)
                     ds.send(new_velocity, angle)
 
