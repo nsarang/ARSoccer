@@ -4,8 +4,7 @@ import time
 import copy
 import os
 import glob
-from datetime import datetime
-
+import pygame
 
 # os.environ["KERAS_BACKEND"] = "plaidml.keras.backend"
 
@@ -118,7 +117,7 @@ if __name__ == "__main__":
     font = cv2.FONT_HERSHEY_PLAIN
     centers = []
     cornerPoints = []
-    FPS = 60
+    FPS = 30
 
     input_dim = (384, 512, 3)
     K.set_learning_phase(0)  # 0 testing, 1 training mode
@@ -186,6 +185,8 @@ if __name__ == "__main__":
     h_mat, mask = cv2.findHomography(pts1, pts_field, cv2.RANSAC)
     inv = np.linalg.inv(h_mat)
 
+    clock = pygame.time.Clock()
+
     while True:
         centers = []
         cords = []
@@ -251,8 +252,8 @@ if __name__ == "__main__":
         if centers:
             tracker.update(centers, cords)
 
-            for vehicle in tracker.tracks:
-                cords = vehicle.cords
+            for foot in tracker.tracks:
+                cords = foot.cords
                 ret = cv2.perspectiveTransform(cords.reshape(4, 1, 2), inv)
                 ret = ret.reshape(4, 2)
 
@@ -264,14 +265,14 @@ if __name__ == "__main__":
                     3,
                 )
 
-                if len(vehicle.trace) > 1:
-                    for j in range(len(vehicle.trace) - 1):
+                if len(foot.trace) > 1:
+                    for j in range(len(foot.trace) - 1):
                         # Draw trace line
 
-                        x1 = vehicle.trace[j][0][0]
-                        y1 = vehicle.trace[j][1][0]
-                        x2 = vehicle.trace[j + 1][0][0]
-                        y2 = vehicle.trace[j + 1][1][0]
+                        x1 = foot.trace[j][0][0]
+                        y1 = foot.trace[j][1][0]
+                        x2 = foot.trace[j + 1][0][0]
+                        y2 = foot.trace[j + 1][1][0]
                         ret = cv2.perspectiveTransform(
                             np.float32([[x1, y1], [x2, y2]]).reshape(-1, 1, 2), inv
                         )
@@ -289,29 +290,29 @@ if __name__ == "__main__":
                 ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
                 print("ball\t", ball_x, ball_y, ball_v, ball_dx, ball_dy)
                 # print('ball', ball_x, ball_y)
-                if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
+                if intersection_ball_object(foot.cords, [ball_x, ball_y], radius):
                     if (
                         ball_v <= 5
                         or (ball_x == 75 and ball_y == 45)
                         or (ball_dx == 0 and ball_dy == 0)
                     ):
-                        ball_v = np.random.randint(1, 10)
+                        ball_v = 0
                         ball_dx = ball_dy = np.random.random()
 
-                    if len(vehicle.trace) <= 1:
+                    if len(foot.trace) <= 1:
                         d_x = ball_dx * np.random.uniform(-2, 2)
                         d_y = ball_dy * np.random.uniform(-2, 2)
                         print("sh   0")
 
-                    elif len(vehicle.trace) == 2:
+                    elif len(foot.trace) == 2:
                         print("sh   1")
-                        d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
-                        d_y = vehicle.trace[-1][1][0] - vehicle.trace[-2][1][0]
+                        d_x = foot.trace[-1][0][0] - foot.trace[-2][0][0]
+                        d_y = foot.trace[-1][1][0] - foot.trace[-2][1][0]
 
                     else:
-                        print("sh   2\t %d" % len(vehicle.trace))
-                        d_x = vehicle.trace[-1][0][0] - vehicle.trace[-3][0][0]
-                        d_y = vehicle.trace[-1][1][0] - vehicle.trace[-3][1][0]
+                        print("sh   2\t %d" % len(foot.trace))
+                        d_x = foot.trace[-1][0][0] - foot.trace[-3][0][0]
+                        d_y = foot.trace[-1][1][0] - foot.trace[-3][1][0]
 
                     if d_x == 0 and d_y == 0:
                         d_x = d_y = np.random.random()
@@ -326,43 +327,10 @@ if __name__ == "__main__":
                     new_velocity = min(100, max(20, res_len))
                     print("2-velo-angle\t", velocity, angle)
                     ds.send(new_velocity, angle)
+        clock.tick(FPS)
 
-                    # Check if tracked object has reached the speed detection line
-                    # if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
-                    # cv2.putText(frame, 'I PASSED!', (int(trace_x), int(trace_y)), font, 1, (0, 255, 255), 1, cv2.LINE_AA)
-                    # vehicle.passed = True
-
-                    # load_lag = (datetime.utcnow() - frame_start_time).total_seconds()
-
-                    # time_dur = (datetime.utcnow() - vehicle.start_time).total_seconds() - load_lag
-                    # time_dur /= 60
-                    # time_dur /= 60
-
-                    # vehicle.mph = ROAD_DIST_MILES / time_dur
-
-                    # If calculated speed exceeds speed limit, save an image of speeding car
-                    # if vehicle.mph > HIGHWAY_SPEED_LIMIT:
-                    # print ('UH OH, SPEEDING!')
-                    # cv2.circle(orig_frame, (int(trace_x), int(trace_y)), 20, (0, 0, 255), 2)
-                    # cv2.putText(orig_frame, 'MPH: %s' % int(vehicle.mph), (int(trace_x), int(trace_y)), font, 1, (0, 0, 255), 1, cv2.LINE_AA)
-                    # cv2.imwrite('speeding_%s.png' % vehicle.track_id, orig_frame)
-                    # print ('FILE SAVED!')
-
-                    # if vehicle.passed:
-                    # Display speed if available
-                    # cv2.putText(frame, 'ID: '+ str(vehicle.track_id), (int(trace_x), int(trace_y)), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                    # else:
-                    # Otherwise, just show tracking id
-                    # cv2.putText(frame, 'ID: '+ str(vehicle.track_id), (int(trace_x), int(trace_y)), font, 1, (255, 255, 255), 1, cv2.LINE_AA)
-                    # except:
-                    # 	pass
 
         # Display all images
-
-        # box = cv2.selectROI("original", frame, fromCenter=False,
-        # 	showCrosshair=True)
-        # print(box)
-        # print(type(shoe_mask))
         ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
 
         ball_mask = np.zeros(shape=(field_height, field_width), dtype=np.uint8)
