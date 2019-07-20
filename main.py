@@ -137,7 +137,7 @@ if __name__ == "__main__":
     blob_min_width = 4
     blob_min_height = 4
 
-    boundary_thresh = 15
+    boundary_thresh = 25
 
     frame_start_time = None
 
@@ -316,6 +316,7 @@ if __name__ == "__main__":
                     if len(foot.trace) <= 1:
                         d_x = ball_dx * np.random.uniform(-2, 2)
                         d_y = ball_dy * np.random.uniform(-2, 2)
+                        ball_v = np.random.randint(4, 20)
                         print("sh   0")
 
                     elif len(foot.trace) == 2:
