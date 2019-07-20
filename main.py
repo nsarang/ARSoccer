@@ -304,9 +304,11 @@ if __name__ == "__main__":
                         d_x = vehicle.trace[-1][0][0] - vehicle.trace[-3][0][0]
                         d_y = vehicle.trace[-1][1][0] - vehicle.trace[-3][1][0]
 
+                    if d_x == 0 and d_y == 0:
+                        d_x = d_y = np.random.random()
                     velocity = np.sqrt(d_x ** 2 + d_y ** 2) * 15
                     res_unit, res_len = sum_vectors((d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v)                    
-                    
+
                     angle = atan2(*res_unit) * 180.0 / pi
                     if angle < 0:
                         angle += 360
