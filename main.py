@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
     field_width = 151
     field_height = 91
-    radius = 6
+    radius = 5
 
     blob_min_width = 4
     blob_min_height = 4
@@ -211,7 +211,7 @@ if __name__ == "__main__":
         thresh, im_bw = cv2.threshold(shoe_mask, 128, 255, cv2.THRESH_BINARY)
         im_bw = cv2.resize(im_bw, (frame.shape[1], frame.shape[0]), cv2.INTER_NEAREST)
 
-        kernel = np.ones((3, 3), np.uint8)
+        kernel = np.ones((4, 4), np.uint8)
         im_bw = cv2.erode(im_bw, kernel, iterations=2)
 
         if os.name == "posix":
@@ -289,7 +289,7 @@ if __name__ == "__main__":
                         ball_v = np.random.randint(1, 10)
                         ball_dx = ball_dy = np.random.random()
 
-                    if len(vehicle.trace) == 1:
+                    if len(vehicle.trace) <= 1:
                         d_x = ball_dx * np.random.uniform(-2, 2)
                         d_y = ball_dy * np.random.uniform(-2, 2)
                         print("sh   0")
