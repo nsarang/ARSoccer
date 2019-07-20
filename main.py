@@ -141,8 +141,8 @@ if __name__ == "__main__":
         c = 0 if vflip else 1
 
     # Capture livestream
-    # cap = VideoCapture("http://192.168.43.1:8080/video")
-    cap = VideoCapture(0)
+    cap = VideoCapture("http://192.168.43.1:8080/video")
+    # cap = VideoCapture(0)
 
     ds = DataSender("127.0.0.1", 1835)
     dr = DataReciever("127.0.0.1", 1836)
@@ -301,7 +301,7 @@ if __name__ == "__main__":
                         d_y = vehicle.trace[-1][1][0] - vehicle.trace[-3][1][0]
 
                     velocity = np.sqrt(d_x ** 2 + d_y ** 2) * 15
-                    res_unit, res_len = sum_vectors((dx, dy), velocity, (-ball_dx, -ball_dy), ball_v)                    
+                    res_unit, res_len = sum_vectors((d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v)                    
                     
                     angle = atan2(*res_unit) * 180.0 / pi
                     if angle < 0:
