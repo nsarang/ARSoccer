@@ -125,7 +125,7 @@ if __name__ == "__main__":
 
     field_width = 151
     field_height = 91
-    radius = 5
+    radius = 4
 
     blob_min_width = 4
     blob_min_height = 4
