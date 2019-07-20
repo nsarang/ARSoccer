@@ -229,8 +229,10 @@ if __name__ == "__main__":
             center = np.array([[x + w / 2], [y + h / 2]])
             # print('blob', h, w)
 
-            if not is_valid_contour(x, y, w, h, thresh):
-                continue
+            # if not is_valid_contour(x, y, w, h, thresh):
+            #     continue
+            if not ptInRectangle(center, cornerPoints):
+				continue
 
             pts = np.float32([[x, y], [x + w, y], [x, y + h], [x + w, y + h]]).reshape(
                 -1, 1, 2
