@@ -94,6 +94,11 @@ def is_valid_contour(x, y, w, h, thresh):
 
 
 def sum_vectors(dir_1, len_1, dir_2, len_2):
+    if np.all(dir_1 == .0):
+        return dir_2, len_2
+    if np.all(dir_2 == .0):
+        return dir_1, len_1
+
     dir_1 = np.asarray(dir_1)
     dir_2 = np.asarray(dir_2)
 
@@ -186,6 +191,9 @@ if __name__ == "__main__":
     inv = np.linalg.inv(h_mat)
 
     clock = pygame.time.Clock()
+    fr_counter = 0
+    fr_shot = -5
+    fr_id = None
 
     while True:
         centers = []
@@ -268,7 +276,6 @@ if __name__ == "__main__":
                 if len(foot.trace) > 1:
                     for j in range(len(foot.trace) - 1):
                         # Draw trace line
-
                         x1 = foot.trace[j][0][0]
                         y1 = foot.trace[j][1][0]
                         x2 = foot.trace[j + 1][0][0]
@@ -291,13 +298,17 @@ if __name__ == "__main__":
                 print("ball\t", ball_x, ball_y, ball_v, ball_dx, ball_dy)
                 # print('ball', ball_x, ball_y)
                 if intersection_ball_object(foot.cords, [ball_x, ball_y], radius):
-                    if (
-                        ball_v <= 5
-                        or (ball_x == 75 and ball_y == 45)
-                        or (ball_dx == 0 and ball_dy == 0)
-                    ):
-                        ball_v = 0
-                        ball_dx = ball_dy = np.random.random()
+                    # if (
+                    #     ball_v <= 5
+                    #     or (ball_x == 75 and ball_y == 45)
+                    #     or (ball_dx == 0 and ball_dy == 0)
+                    # ):
+                    #     ball_v = 0
+                    #     ball_dx = ball_dy = np.random.random()
+                    if fr_counter - fr_shot <= 2 and foot.track_id == fr_id:
+                        continue
+                    fr_shot = fr_counter
+                    fr_id = foot.track_id
 
                     if len(foot.trace) <= 1:
                         d_x = ball_dx * np.random.uniform(-2, 2)
@@ -328,6 +339,7 @@ if __name__ == "__main__":
                     print("2-velo-angle\t", velocity, angle)
                     ds.send(new_velocity, angle)
         clock.tick(FPS)
+        fr_counter +=1
 
 
         # Display all images
