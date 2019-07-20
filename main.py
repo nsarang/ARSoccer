@@ -76,12 +76,12 @@ def intersection_ball_object(rect_cords, circle_cent, radius):
 
 def is_valid_contour(x, y, w, h, thresh):
     center = np.array([[x + w / 2], [y + h / 2]])
-    p1, p2, p3, p4 = cornerPoints
+    p = cornerPoints
     upscaledPts = [
-        [p1[0] - thresh, p1[1] - thresh],
-        [p2[0] + thresh, p2[1] - thresh],
-        [p3[0] - thresh, p3[1] + thresh],
-        [p4[0] + thresh, p4[1] + thresh],
+        [p[0][0] - thresh, p[0][1] - thresh],
+        [p[1][0] + thresh, p[1][1] - thresh],
+        [p[2][0] - thresh, p[2][1] + thresh],
+        [p[3][0] + thresh, p[3][1] + thresh],
     ]
 
     return (
