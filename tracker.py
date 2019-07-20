@@ -165,8 +165,8 @@ class Tracker(object):
                 self.tracks[i].skipped_frames = 0
                 self.tracks[i].prediction = self.tracks[i].KF.correct(
                                             detections[assignment[i]], 1)
-                if len(self.tracks[i].trace) % 3 == 0:
-                    self.tracks[i].cords = cords[assignment[i]]
+                # if len(self.tracks[i].trace) % 3 == 0:
+                self.tracks[i].cords = cords[assignment[i]]
             else:
                 self.tracks[i].prediction = self.tracks[i].KF.correct(
                                             np.array([[0], [0]]), 0)
