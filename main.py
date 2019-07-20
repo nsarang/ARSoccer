@@ -94,16 +94,15 @@ def is_valid_contour(x, y, w, h, thresh):
 def sum_vectors(dir_1, len_1, dir_2, len_2):
     dir_1 = np.asarray(dir_1)
     dir_2 = np.asarray(dir_2)
-    
-    vel_1 = len_1 * (dir_1 / (dir_1**2).sum()**0.5)
-    vel_2 = len_2 * (dir_2 / (dir_2**2).sum()**0.5)
+
+    vel_1 = len_1 * (dir_1 / (dir_1 ** 2).sum() ** 0.5)
+    vel_2 = len_2 * (dir_2 / (dir_2 ** 2).sum() ** 0.5)
     result = vel_1 + vel_2
 
-    res_len = (result**2).sum()**0.5
+    res_len = (result ** 2).sum() ** 0.5
     res_unit = result / res_len
-    
-    return res_unit, res_len
 
+    return res_unit, res_len
 
 
 if __name__ == "__main__":
@@ -155,7 +154,6 @@ if __name__ == "__main__":
     model = keras.models.model_from_json(loaded_model_json)
     model.load_weights("context.h5")
     print("[INFO] Loaded model from disk")
-
 
     cv2.namedWindow("Select")
     cv2.setMouseCallback("Select", brush_circle)
@@ -240,7 +238,10 @@ if __name__ == "__main__":
             newPts = cv2.perspectiveTransform(pts, h_mat).reshape(4, 2)
 
             center = np.array(
-                [[(newPts[0][0] + newPts[1][0]) / 2], [(newPts[0][1] + newPts[2][1]) / 2]]
+                [
+                    [(newPts[0][0] + newPts[1][0]) / 2],
+                    [(newPts[0][1] + newPts[2][1]) / 2],
+                ]
             )
             centers.append(np.round(center))
             cords.append(newPts)
@@ -284,10 +285,14 @@ if __name__ == "__main__":
                         )
 
                 ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
-                print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
+                print("ball\t", ball_x, ball_y, ball_v, ball_dx, ball_dy)
                 # print('ball', ball_x, ball_y)
                 if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
-                    if ball_v <= 5 or (ball_x == 75 and ball_y == 45):
+                    if (
+                        ball_v <= 5
+                        or (ball_x == 75 and ball_y == 45)
+                        or (ball_dx == 0 and ball_dy == 0)
+                    ):
                         ball_v = np.random.randint(1, 10)
                         ball_dx = ball_dy = np.random.random()
 
@@ -300,7 +305,7 @@ if __name__ == "__main__":
                         print("sh   1")
                         d_x = vehicle.trace[-1][0][0] - vehicle.trace[-2][0][0]
                         d_y = vehicle.trace[-1][1][0] - vehicle.trace[-2][1][0]
-                    
+
                     else:
                         print("sh   2\t %d" % len(vehicle.trace))
                         d_x = vehicle.trace[-1][0][0] - vehicle.trace[-3][0][0]
@@ -309,7 +314,9 @@ if __name__ == "__main__":
                     if d_x == 0 and d_y == 0:
                         d_x = d_y = np.random.random()
                     velocity = np.sqrt(d_x ** 2 + d_y ** 2) * 15
-                    res_unit, res_len = sum_vectors((d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v)                    
+                    res_unit, res_len = sum_vectors(
+                        (d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v
+                    )
 
                     angle = atan2(*res_unit) * 180.0 / pi
                     if angle < 0:
@@ -317,7 +324,7 @@ if __name__ == "__main__":
                     new_velocity = min(150, max(20, res_len))
                     print("2-velo-angle\t", velocity, angle)
                     ds.send(new_velocity, angle)
-                    
+
                     # Check if tracked object has reached the speed detection line
                     # if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
                     # cv2.putText(frame, 'I PASSED!', (int(trace_x), int(trace_y)), font, 1, (0, 255, 255), 1, cv2.LINE_AA)
