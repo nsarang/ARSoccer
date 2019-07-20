@@ -102,7 +102,8 @@ def sum_vectors(dir_1, len_1, dir_2, len_2):
     if np.all(dir_2 == .0):
         return dir_1, len_1
     
-    print(dir_1, dir_2)
+    print(dir_1, len_1)
+    print(dir_2, len_2)
 
     vel_1 = len_1 * (dir_1 / (dir_1 ** 2).sum() ** 0.5)
     vel_2 = len_2 * (dir_2 / (dir_2 ** 2).sum() ** 0.5)
@@ -110,7 +111,7 @@ def sum_vectors(dir_1, len_1, dir_2, len_2):
 
     res_len = (result ** 2).sum() ** 0.5
     res_unit = result / res_len
-
+    print('res', res_unit, res_len)
     return res_unit, res_len
 
 
