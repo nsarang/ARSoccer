@@ -94,13 +94,15 @@ def is_valid_contour(x, y, w, h, thresh):
 
 
 def sum_vectors(dir_1, len_1, dir_2, len_2):
+    dir_1 = np.asarray(dir_1)
+    dir_2 = np.asarray(dir_2)
+
     if np.all(dir_1 == .0):
         return dir_2, len_2
     if np.all(dir_2 == .0):
         return dir_1, len_1
-
-    dir_1 = np.asarray(dir_1)
-    dir_2 = np.asarray(dir_2)
+    
+    print(dir_1, dir_2)
 
     vel_1 = len_1 * (dir_1 / (dir_1 ** 2).sum() ** 0.5)
     vel_2 = len_2 * (dir_2 / (dir_2 ** 2).sum() ** 0.5)
@@ -328,6 +330,7 @@ if __name__ == "__main__":
                     if d_x == 0 and d_y == 0:
                         d_x = d_y = np.random.random()
                     velocity = np.sqrt(d_x ** 2 + d_y ** 2) * 10
+                    velocity = min(100, max(5, velocity))
                     res_unit, res_len = sum_vectors(
                         (d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v / 2
                     )
