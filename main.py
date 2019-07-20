@@ -128,6 +128,8 @@ if __name__ == "__main__":
     blob_min_width = 4
     blob_min_height = 4
 
+    thresh = 8
+
     frame_start_time = None
 
     # Create object tracker
