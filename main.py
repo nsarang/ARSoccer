@@ -336,7 +336,7 @@ if __name__ == "__main__":
                         (d_x, d_y), velocity, (-ball_dx, -ball_dy), ball_v / 2
                     )
 
-                    angle = atan2(res_unit[0], -res_unit[1]) * 180.0 / pi
+                    angle = atan2(-res_unit[1], res_unit[0]) * 180.0 / pi
                     if angle < 0:
                         angle += 360
                     new_velocity = min(100, max(20, res_len))
