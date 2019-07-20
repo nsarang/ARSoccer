@@ -285,6 +285,10 @@ if __name__ == "__main__":
                 print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
                 # print('ball', ball_x, ball_y)
                 if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
+                    if ball_v <= 5:
+                        ball_v = np.random.randint(1, 10)
+                        ball_dx = ball_dy = np.random.random()
+
                     if len(vehicle.trace) == 1:
                         d_x = ball_dx * np.random.uniform(-2, 2)
                         d_y = ball_dy * np.random.uniform(-2, 2)
@@ -308,7 +312,7 @@ if __name__ == "__main__":
                         angle += 360
                     new_velocity = min(150, max(20, res_len))
                     print("2-velo-angle\t", velocity, angle)
-                    ds.send(velocity, angle)
+                    ds.send(new_velocity, angle)
                     
                     # Check if tracked object has reached the speed detection line
                     # if trace_y <= Y_THRESH + 5 and trace_y >= Y_THRESH - 5 and not vehicle.passed:
