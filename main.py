@@ -285,7 +285,7 @@ if __name__ == "__main__":
                 print('ball\t', ball_x, ball_y, ball_v, ball_dx, ball_dy)
                 # print('ball', ball_x, ball_y)
                 if intersection_ball_object(vehicle.cords, [ball_x, ball_y], radius):
-                    if ball_v <= 5:
+                    if ball_v <= 5 or (ball_x == 75 and ball_y == 45):
                         ball_v = np.random.randint(1, 10)
                         ball_dx = ball_dy = np.random.random()
 
