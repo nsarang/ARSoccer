@@ -142,7 +142,7 @@ if __name__ == "__main__":
     frame_start_time = None
 
     # Create object tracker
-    tracker = Tracker(200, 3, 3, 1)
+    tracker = Tracker(200, 4, 3, 1)
 
     hflip = 1
     vflip = 0
@@ -241,7 +241,6 @@ if __name__ == "__main__":
         # Find centers of all detected objects
         for cnt in contours:
             x, y, w, h = cv2.boundingRect(cnt)
-            # print('blob', h, w)
 
             if not is_valid_contour(x, y, w, h, boundary_thresh):
                 continue
@@ -288,7 +287,6 @@ if __name__ == "__main__":
                         )
                         ret = ret.reshape(2, 2)
                         # print(ret.shape)
-                        # print(ret)
                         cv2.line(
                             frame,
                             (int(ret[0][0]), int(ret[0][1])),
@@ -299,7 +297,7 @@ if __name__ == "__main__":
 
                 ball_x, ball_y, ball_v, ball_dx, ball_dy = dr.get_stats()
                 print("ball\t", ball_x, ball_y, ball_v, ball_dx, ball_dy)
-                # print('ball', ball_x, ball_y)
+
                 if intersection_ball_object(foot.cords, [ball_x, ball_y], radius):
                     # if (
                     #     ball_v <= 5
